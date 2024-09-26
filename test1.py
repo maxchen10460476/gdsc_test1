@@ -1,51 +1,52 @@
-	# 先導入後面會用到的套件
-import requests # 請求工具
-from bs4 import BeautifulSoup # 解析工具
-import time # 用來暫停程式
- 
+# 先導入後面會用到的套件
+import requests  # 請求工具
+from bs4 import BeautifulSoup  # 解析工具
+import time  # 用來暫停程式
+
 # 要爬的股票
-stock = ["1101","2330","1102"]
-	for i in range(len(stock)): # 迴圈依序爬股價
+stock = ["1101", "2330", "1102"]
 
-	    # 現在處理的股票
+for i in range(len(stock)):  # 迴圈依序爬股價
+    # 現在處理的股票
+    stockid = stock[i]
 
-	    stockid = stock[i]
+    # 網址塞入股票編號
+    url = f"https://tw.stock.yahoo.com/quote/{stockid}.TW"
 
-	    # 網址塞入股票編號
+    # 發送請求
+    r = requests.get(url)
 
-	    url = "https://tw.stock.yahoo.com/quote/"+stockid+".TW"
+    if r.status_code == 200:  # 確認請求成功
+        # 解析回應的 HTML
+        soup = BeautifulSoup(r.text, 'html.parser')
 
-	    # 發送請求
+        # 定位股價
+        price_tag = soup.find('span', class_=[
+            "Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c) C($c-trend-down)",
+            "Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c)",
+            "Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c) C($c-trend-up)"
+        ])
 
-	    r = requests.get(url)
+        if price_tag:  # 確認找到股價
+            price = price_tag.getText()
+            # 回報的訊息 (可自訂)
+            message = f"股票 {stockid} 即時股價為 {price}"
 
-	    # 解析回應的 HTML
+            # 用 telegram bot 回報股價
+            # bot token
+            token = "7299514001:AAEkmtXaPyCBb00AmAeCQZAOFUXjWM6apI0"
 
-	    soup = BeautifulSoup(r.text, 'html.parser')
+            # 使用者 id
+            chat_id = "5778625335"
 
-	    # 定位股價
+            # bot 送訊息
+            url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
 
-	    price = soup.find('span',class_=["Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c) C($c-trend-down)","Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c)","Fz(32px) Fw(b) Lh(1) Mend(16px) D(f) Ai(c) C($c-trend-up)"]).getText()
-     	    # 回報的訊息 (可自訂)
+            requests.get(url)  # 發送訊息
+        else:
+            print(f"未找到股票 {stockid} 的股價。")
+    else:
+        print(f"請求失敗，狀態碼: {r.status_code}")
 
-	    message = "股票 "+stockid+" 即時股價為 "+price
-
-	    # 用 telegram bot 回報股價
-
-	    # bot token
-
-	    token = "7299514001:AAEkmtXaPyCBb00AmAeCQZAOFUXjWM6apI0"
-
-	    # 使用者 id
-
-	    chat_id="5778625335"
-
-	    # bot 送訊息
-
-	    url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
-
-	    requests.get(url)
-
-	    # 每次都停 3 秒
-
-	    time.sleep(3)
+    # 每次都停 3 秒
+    time.sleep(3)
